@@ -82,6 +82,14 @@ else:
 
     st.write(f"**Total ETF Value (Converted to CHF):** CHF {total_etf_value_chf:,.2f}")
     st.write(f"**ETF Profit Since Purchase (in CHF):** CHF {etf_profit_chf:,.2f}")
+    if initial_price_usd and latest_price_usd:
+        total_performance = ((latest_price_usd / initial_price_usd) - 1) * 100
+    else:
+        total_performance = None
+    if total_performance is not None:
+        st.write(f"**Total Performance Since Purchase:** {total_performance:.2f}%")
+    else:
+        st.write("Performance data not available.")
     st.write(f"**Total Portfolio Value:** CHF {(savings_balance + total_etf_value_chf):,.2f}")
 
     if not df.empty:
@@ -90,13 +98,23 @@ else:
     else:
         st.warning("No ETF price data available.")
 
-    st.subheader("📊 Fund Composition")
-    fund_info = etf.info.get("holdings", [])
-    if fund_info:
-        df_holdings = pd.DataFrame(fund_info)
-        st.dataframe(df_holdings)
-    else:
-        st.write("No holdings data available for this ETF.")
+    df["Daily Return"] = df["Close"].pct_change()
+    volatility = df["Daily Return"].std() * 100
+    st.write(f"**Historical Volatility:** {volatility:.2f}%")
+
+    risk_free_rate = 0.01
+    sharpe_ratio = (df["Daily Return"].mean() - risk_free_rate / 252) / df["Daily Return"].std()
+    st.write(f"**Sharpe Ratio:** {sharpe_ratio:.2f}")
 
     st.link_button("Go to iShares ETF",
                    "https://www.ishares.com/de/privatanleger/de/produkte/251882/ishares-msci-world-ucits-etf-acc-fund")
+
+
+    sp500 = yf.Ticker("^GSPC").history(start=START_DATE)
+    sp500["Performance"] = sp500["Close"] / sp500["Close"].iloc[0] * 100
+    df["Performance"] = df["Close"] / df["Close"].iloc[0] * 100
+
+    fig = px.line(title="ETF vs. S&P 500 Performance Comparison")
+    fig.add_scatter(x=df["Date"], y=df["Performance"], name="ETF")
+    fig.add_scatter(x=sp500.index, y=sp500["Performance"], name="S&P 500")
+    st.plotly_chart(fig)
