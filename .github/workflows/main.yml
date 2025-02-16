@@ -23,7 +23,7 @@ jobs:
         run: pip install pandas
 
       - name: Run deposit update script
-        run: python update_deposits.py
+        run: python moneyTransfer.py
 
       - name: Commit and push changes
         run: |
