@@ -73,48 +73,101 @@ else:
     else:
         etf_profit_chf = 0.0
 
-    st.write(f"**Cash Balance:** CHF {savings_balance:,.2f}")
+    col1, col2 = st.columns(2)
+    col1.metric("Cash Balance", f"CHF {savings_balance:,.2f}")
 
-    if latest_price_usd:
-        st.write(f"**ETF Holdings:** {NUM_SHARES} shares of {ISIN} (Latest Price: {latest_price_usd:.2f} USD)")
-    else:
-        st.write("**ETF Holdings:** Could not fetch latest price.")
-
-    st.write(f"**Total ETF Value (Converted to CHF):** CHF {total_etf_value_chf:,.2f}")
-    st.write(f"**ETF Profit Since Purchase (in CHF):** CHF {etf_profit_chf:,.2f}")
     if initial_price_usd and latest_price_usd:
         total_performance = ((latest_price_usd / initial_price_usd) - 1) * 100
+        delta_str = f"{etf_profit_chf:+,.2f} CHF ({total_performance:+.2f}%)"
     else:
-        total_performance = None
-    if total_performance is not None:
-        st.write(f"**Total Performance Since Purchase:** {total_performance:.2f}%")
+        delta_str = f"{etf_profit_chf:+,.2f} CHF"
+
+    col2.metric("Total ETF Value", f"CHF {total_etf_value_chf:,.2f}", delta=delta_str)
+    if latest_price_usd:
+        col2.caption(f"Depot Composition: {NUM_SHARES} shares of {ISIN} (Latest Price: {latest_price_usd:.2f} USD)")
     else:
-        st.write("Performance data not available.")
-    st.write(f"**Total Portfolio Value:** CHF {(savings_balance + total_etf_value_chf):,.2f}")
+        col2.caption("Depot Composition: Data not available")
+
+    total_portfolio_value = savings_balance + total_etf_value_chf
+    st.markdown(
+        f'<div style="text-align: center; margin: 20px 0; padding: 15px; background-color: #e8f5e9; border-radius: 8px;">'
+        f'<h2 style="margin: 0; color: #2e7d32;">Total Portfolio Value: CHF {total_portfolio_value:,.2f}</h2></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
 
     if not df.empty:
-        fig = px.line(df, x="Date", y="Close", title=f"ETF Price Trend Since Purchase {START_DATE} | {ISIN}")
+        fig = px.line(df, x="Date", y="Close", title=f"ETF Price Trend Since Purchase ({START_DATE}) | {ISIN}")
         st.plotly_chart(fig)
     else:
         st.warning("No ETF price data available.")
 
     df["Daily Return"] = df["Close"].pct_change()
     volatility = df["Daily Return"].std() * 100
-    st.write(f"**Historical Volatility:** {volatility:.2f}%")
-
     risk_free_rate = 0.01
     sharpe_ratio = (df["Daily Return"].mean() - risk_free_rate / 252) / df["Daily Return"].std()
-    st.write(f"**Sharpe Ratio:** {sharpe_ratio:.2f}")
+
+    col6, col7 = st.columns(2)
+    col6.metric("Historical Volatility", f"{volatility:.2f}%")
+    col7.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
 
     st.link_button("Go to iShares ETF",
                    "https://www.ishares.com/de/privatanleger/de/produkte/251882/ishares-msci-world-ucits-etf-acc-fund")
 
+    st.markdown("---")
+    st.subheader("Alternative Investment Comparison")
 
-    sp500 = yf.Ticker("^GSPC").history(start=START_DATE)
-    sp500["Performance"] = sp500["Close"] / sp500["Close"].iloc[0] * 100
-    df["Performance"] = df["Close"] / df["Close"].iloc[0] * 100
+    comparison_assets = {
+        "Credit Suisse": "CS",
+        "UBS": "SWX",
+        "Tesla": "TSLA",
+        "Microsoft": "MSFT",
+        "Apple": "AAPL",
+        "Nvidia": "NVDA",
+        "S&P 500": "^GSPC",
+        "SMI": "SMI",
+        "Bitcoin ETF": "IBIT"
 
-    fig = px.line(title="ETF vs. S&P 500 Performance Comparison")
-    fig.add_scatter(x=df["Date"], y=df["Performance"], name="ETF")
-    fig.add_scatter(x=sp500.index, y=sp500["Performance"], name="S&P 500")
-    st.plotly_chart(fig)
+    }
+    options = list(comparison_assets.keys()) + ["Other"]
+    selected_asset = st.selectbox("Compare with:", options)
+
+    if selected_asset == "Other":
+        asset_ticker = st.text_input("Enter a ticker symbol for comparison:").strip().upper()
+        if not asset_ticker:
+            st.warning("Please enter a valid ticker symbol.")
+            st.stop()
+    else:
+        asset_ticker = comparison_assets[selected_asset]
+
+    if asset_ticker.upper() == "CS":
+        st.warning("No available data. Idiots drove the company into the wall")
+        st.stop()
+
+    asset_data = yf.Ticker(asset_ticker).history(start=START_DATE)
+    if asset_data.empty:
+        st.warning(f"No data available for {selected_asset}.")
+    else:
+        asset_initial_price = asset_data["Close"].iloc[0]
+        asset_latest_price = asset_data["Close"].iloc[-1]
+        asset_performance = (asset_latest_price / asset_initial_price - 1) * 100
+
+        initial_investment = NUM_SHARES * initial_price_usd
+        alternative_shares = initial_investment / asset_initial_price
+        asset_value_if_invested_usd = alternative_shares * asset_latest_price
+        asset_profit_usd = asset_value_if_invested_usd - initial_investment
+        asset_value_if_invested = asset_value_if_invested_usd * latest_fx_rate
+        asset_profit_chf = asset_profit_usd * latest_fx_rate
+
+        col1, col2 = st.columns(2)
+        col1.metric(f"{selected_asset} Portfolio Value", f"CHF {asset_value_if_invested:,.2f}",
+                    delta=f"{asset_performance:+.2f}%")
+        col2.metric("Profit Difference", f"CHF {(asset_profit_chf - etf_profit_chf):,.2f}")
+
+        fig = px.line(title=f"ETF vs. {selected_asset} Performance Comparison")
+        df["Performance"] = df["Close"] / df["Close"].iloc[0] * 100
+        asset_data["Performance"] = asset_data["Close"] / asset_data["Close"].iloc[0] * 100
+        fig.add_scatter(x=df["Date"], y=df["Performance"], name="ETF")
+        fig.add_scatter(x=asset_data.index, y=asset_data["Performance"], name=selected_asset)
+        st.plotly_chart(fig)
