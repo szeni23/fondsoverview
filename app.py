@@ -6,12 +6,12 @@ import plotly.express as px
 from dotenv import load_dotenv
 
 load_dotenv()
-MY_PASSWORD = os.environ["APP_PASSWORD"]
-NUM_SHARES = int(os.environ["NUM_SHARES"])
-ISIN = os.environ["ISIN"]
-TICKER = os.environ["TICKER"]
-START_DATE = os.environ["START_DATE"]
-INITIAL_SAVINGS = float(os.environ["INITIAL_SAVINGS"])
+MY_PASSWORD = st.secrets["auth"]["APP_PASSWORD"]
+NUM_SHARES = int(st.secrets["portfolio"]["NUM_SHARES"])
+ISIN = st.secrets["portfolio"]["ISIN"]
+TICKER = st.secrets["portfolio"]["TICKER"]
+START_DATE = st.secrets["portfolio"]["START_DATE"]
+INITIAL_SAVINGS = float(st.secrets["portfolio"]["INITIAL_SAVINGS"])
 
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
