@@ -170,4 +170,9 @@ else:
         asset_data["Performance"] = asset_data["Close"] / asset_data["Close"].iloc[0] * 100
         fig.add_scatter(x=df["Date"], y=df["Performance"], name="ETF")
         fig.add_scatter(x=asset_data.index, y=asset_data["Performance"], name=selected_asset)
-        st.plotly_chart(fig)
+        fig.update_layout(
+            autosize=True,
+            margin=dict(l=10, r=10, t=30, b=10),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
