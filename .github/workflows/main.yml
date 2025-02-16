@@ -2,9 +2,7 @@ name: Update Deposits CSV
 
 on:
   schedule:
-    - cron: '0 14 * * *'  
-    - cron: '0 20 * * *'  
-    - cron: '0 31 * * *'  
+    - cron: '00 00 23 * *'  
   workflow_dispatch:  
 
 jobs:
