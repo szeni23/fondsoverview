@@ -90,5 +90,13 @@ else:
     else:
         st.warning("No ETF price data available.")
 
+    st.subheader("📊 Fund Composition")
+    fund_info = etf.info.get("holdings", [])
+    if fund_info:
+        df_holdings = pd.DataFrame(fund_info)
+        st.dataframe(df_holdings)
+    else:
+        st.write("No holdings data available for this ETF.")
+
     st.link_button("Go to iShares ETF",
                    "https://www.ishares.com/de/privatanleger/de/produkte/251882/ishares-msci-world-ucits-etf-acc-fund")
