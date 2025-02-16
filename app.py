@@ -98,8 +98,14 @@ else:
     st.markdown("---")
 
     if not df.empty:
-        fig = px.line(df, x="Date", y="Close", title=f"ETF Price Trend Since Purchase ({START_DATE}) | {ISIN}")
-        st.plotly_chart(fig)
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(10, 4))
+        sns.lineplot(data=df, x="Date", y="Close")
+        plt.title(f"ETF Price Trend Since Purchase ({START_DATE}) | {ISIN}")
+        plt.tight_layout()
+        st.pyplot(plt.gcf())
     else:
         st.warning("No ETF price data available.")
 
@@ -165,14 +171,16 @@ else:
                     delta=f"{asset_performance:+.2f}%")
         col2.metric("Profit Difference", f"CHF {(asset_profit_chf - etf_profit_chf):,.2f}")
 
-        fig = px.line(title=f"ETF vs. {selected_asset} Performance Comparison")
         df["Performance"] = df["Close"] / df["Close"].iloc[0] * 100
         asset_data["Performance"] = asset_data["Close"] / asset_data["Close"].iloc[0] * 100
-        fig.add_scatter(x=df["Date"], y=df["Performance"], name="ETF")
-        fig.add_scatter(x=asset_data.index, y=asset_data["Performance"], name=selected_asset)
-        fig.update_layout(
-            autosize=True,
-            margin=dict(l=10, r=10, t=30, b=10),
-        )
-        st.plotly_chart(fig, use_container_width=True)
+
+
+        plt.figure(figsize=(10, 4))
+        sns.lineplot(data=df, x="Date", y="Performance", label="ETF")
+        asset_data_reset = asset_data.reset_index()
+        sns.lineplot(data=asset_data_reset, x="Date", y="Performance", label=selected_asset)
+        plt.title(f"ETF vs. {selected_asset} Performance Comparison")
+        plt.tight_layout()
+
+        st.pyplot(plt.gcf())
 
