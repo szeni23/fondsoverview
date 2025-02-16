@@ -1,9 +1,9 @@
-  name: Update Deposits CSV
+name: Update Deposits CSV
 
 on:
   schedule:
-    - cron: '00 00 23 * *'  
-  workflow_dispatch:  
+    - cron: '0 23 * * *'
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -29,10 +29,10 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
           git add deposit.csv
-          git commit -m "Automated deposit update"
+          git commit -m "Automated deposit update" || echo "No changes to commit"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/szeni23/fondsoverview.git
           git push
         env:
