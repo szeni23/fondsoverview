@@ -26,8 +26,7 @@ if not st.session_state["logged_in"]:
             st.error("Invalid password")
     st.stop()
 else:
-    st.title("💰 Friends Investment Dashboard")
-    st.write("Tracking our shared investment and savings.")
+    st.title("💰 SBOG42 Funds overview")
 
     deposits_url = "https://raw.githubusercontent.com/szeni23/fondsoverview/main/deposit.csv"
 
@@ -74,7 +73,6 @@ else:
     else:
         etf_profit_chf = 0.0
 
-    st.subheader("📊 Portfolio Overview")
     st.write(f"**Cash Balance:** CHF {savings_balance:,.2f}")
 
     if latest_price_usd:
@@ -91,3 +89,6 @@ else:
         st.plotly_chart(fig)
     else:
         st.warning("No ETF price data available.")
+
+    st.link_button("Go to iShares ETF",
+                   "https://www.ishares.com/de/privatanleger/de/produkte/251882/ishares-msci-world-ucits-etf-acc-fund")
