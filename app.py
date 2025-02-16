@@ -5,7 +5,6 @@ import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
 
-load_dotenv()
 MY_PASSWORD = st.secrets["auth"]["APP_PASSWORD"]
 NUM_SHARES = int(st.secrets["portfolio"]["NUM_SHARES"])
 ISIN = st.secrets["portfolio"]["ISIN"]
