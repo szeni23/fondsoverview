@@ -12,6 +12,19 @@ TICKER = st.secrets["portfolio"]["TICKER"]
 START_DATE = st.secrets["portfolio"]["START_DATE"]
 INITIAL_SAVINGS = float(st.secrets["portfolio"]["INITIAL_SAVINGS"])
 
+@st.cache_data(ttl=3600)
+def get_history(ticker, start=None, period=None):
+    try:
+        tkr = yf.Ticker(ticker)
+        if period:
+            return tkr.history(period=period)
+        else:
+            return tkr.history(start=start)
+    except yf.YFRateLimitError:
+        st.error("Yahoo Finance rate limit reached. Please try again later.")
+        return pd.DataFrame()
+
+
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 
@@ -42,8 +55,7 @@ else:
         st.error(f"Could not load deposits CSV. Error: {e}")
         savings_balance = INITIAL_SAVINGS
 
-    etf = yf.Ticker(TICKER)
-    df = etf.history(start="2023-07-30")
+    df = get_history(TICKER, start="2023-07-30")
     df.reset_index(inplace=True)
 
     initial_data = df.loc[df["Date"] == START_DATE]
@@ -58,8 +70,7 @@ else:
 
     latest_price_usd = df["Close"].iloc[-1] if not df.empty else None
 
-    fx = yf.Ticker("CHF=X")
-    fx_data = fx.history(period="1d")
+    fx_data = get_history("CHF=X", period="1d")
     latest_fx_rate = fx_data["Close"].iloc[-1] if not fx_data.empty else 1.0
 
     if latest_price_usd:
@@ -151,7 +162,7 @@ else:
         st.warning("No available data. Idiots drove the company into the wall")
         st.stop()
 
-    asset_data = yf.Ticker(asset_ticker).history(start=START_DATE)
+    asset_data = get_history(asset_ticker, start=START_DATE)
     if asset_data.empty:
         st.warning(f"No data available for {selected_asset}.")
     else:
