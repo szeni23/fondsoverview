@@ -16,10 +16,8 @@ INITIAL_SAVINGS = float(st.secrets["portfolio"]["INITIAL_SAVINGS"])
 def get_history(ticker, start=None, period=None):
     try:
         tkr = yf.Ticker(ticker)
-        if period:
-            return tkr.history(period=period)
-        else:
-            return tkr.history(start=start)
+        history = tkr.history(period=period) if period else tkr.history(start=start)
+        return history.reset_index()
     except yf.YFRateLimitError:
         st.error("Yahoo Finance rate limit reached. Please try again later.")
         return pd.DataFrame()
