@@ -4,6 +4,20 @@ import yfinance as yf
 import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
+from yfinance.utils import YFRateLimitError
+
+CACHE_TTL = 60 * 60  # 1 hour
+
+@st.cache_data(ttl=CACHE_TTL, show_spinner="Loading price data …")
+def get_history(ticker, start):
+    """Download and cache historical prices."""
+    return yf.download(ticker, start=start, threads=False)
+
+@st.cache_data(ttl=CACHE_TTL)
+def get_fxrate(pair="CHF=X"):
+    """Download and cache latest FX rate."""
+    return yf.download(pair, period="1d", threads=False)
+
 
 MY_PASSWORD = st.secrets["auth"]["APP_PASSWORD"]
 NUM_SHARES = int(st.secrets["portfolio"]["NUM_SHARES"])
@@ -42,8 +56,11 @@ else:
         st.error(f"Could not load deposits CSV. Error: {e}")
         savings_balance = INITIAL_SAVINGS
 
-    etf = yf.Ticker(TICKER)
-    df = etf.history(start="2023-07-30")
+    try:
+        df = get_history(TICKER, "2023-07-30")
+    except YFRateLimitError:
+        st.error("Yahoo Finance rate limit reached. Please try again later.")
+        st.stop()
     df.reset_index(inplace=True)
 
     initial_data = df.loc[df["Date"] == START_DATE]
@@ -58,8 +75,11 @@ else:
 
     latest_price_usd = df["Close"].iloc[-1] if not df.empty else None
 
-    fx = yf.Ticker("CHF=X")
-    fx_data = fx.history(period="1d")
+    try:
+        fx_data = get_fxrate()
+    except YFRateLimitError:
+        st.warning("FX rate unavailable due to rate limit. Assuming 1.0")
+        fx_data = pd.DataFrame({"Close": [1.0]})
     latest_fx_rate = fx_data["Close"].iloc[-1] if not fx_data.empty else 1.0
 
     if latest_price_usd:
@@ -151,7 +171,11 @@ else:
         st.warning("No available data. Idiots drove the company into the wall")
         st.stop()
 
-    asset_data = yf.Ticker(asset_ticker).history(start=START_DATE)
+    try:
+        asset_data = get_history(asset_ticker, START_DATE)
+    except YFRateLimitError:
+        st.warning("Data for selected asset is unavailable due to rate limit.")
+        st.stop()
     if asset_data.empty:
         st.warning(f"No data available for {selected_asset}.")
     else:
