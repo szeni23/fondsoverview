@@ -5,10 +5,15 @@ import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
 try:
-    from yfinance.utils import YFRateLimitError
+    from yfinance.utils import YFRateLimitError  # yfinance ≥0.2.54
 except ImportError:
-    # Fallback for yfinance versions where the error is re-exported at top level
-    from yfinance import YFRateLimitError
+    try:
+        from yfinance import YFRateLimitError  # some versions re-export at top-level
+    except ImportError:
+        # Very old versions – define a dummy to allow code to run
+        class YFRateLimitError(Exception):
+            """Placeholder for yfinance's rate-limit error (older library version)."""
+            pass
 
 CACHE_TTL = 60 * 60  # 1 hour
 
