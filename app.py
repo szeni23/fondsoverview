@@ -70,6 +70,9 @@ else:
     except YFRateLimitError:
         st.error("Yahoo Finance rate limit reached. Please try again later.")
         st.stop()
+    except Exception as e:
+        st.error(f"Failed to load ETF data: {e}")
+        st.stop()
     df.reset_index(inplace=True)
 
     initial_data = df.loc[df["Date"] == START_DATE]
@@ -88,6 +91,9 @@ else:
         fx_data = get_fxrate()
     except YFRateLimitError:
         st.warning("FX rate unavailable due to rate limit. Assuming 1.0")
+        fx_data = pd.DataFrame({"Close": [1.0]})
+    except Exception as e:
+        st.warning(f"FX rate unavailable ({e}). Assuming 1.0")
         fx_data = pd.DataFrame({"Close": [1.0]})
     latest_fx_rate = fx_data["Close"].iloc[-1] if not fx_data.empty else 1.0
 
@@ -184,7 +190,10 @@ else:
         asset_data = get_history(asset_ticker, START_DATE)
     except YFRateLimitError:
         st.warning("Data for selected asset is unavailable due to rate limit.")
-        st.stop()
+        asset_data = pd.DataFrame()
+    except Exception as e:
+        st.warning(f"Could not load data for {selected_asset}: {e}")
+        asset_data = pd.DataFrame()
     if asset_data.empty:
         st.warning(f"No data available for {selected_asset}.")
     else:

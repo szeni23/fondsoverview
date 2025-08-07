@@ -3,5 +3,5 @@ pandas==1.5.2
 plotly==5.22.0
 matplotlib>=3.5
 python-dotenv==1.0.1
-yfinance==0.2.53
+yfinance>=0.2.54
 seaborn>=0.11
