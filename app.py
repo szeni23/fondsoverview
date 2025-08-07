@@ -4,7 +4,11 @@ import yfinance as yf
 import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
-from yfinance.utils import YFRateLimitError
+try:
+    from yfinance.utils import YFRateLimitError
+except ImportError:
+    # Fallback for yfinance versions where the error is re-exported at top level
+    from yfinance import YFRateLimitError
 
 CACHE_TTL = 60 * 60  # 1 hour
 
